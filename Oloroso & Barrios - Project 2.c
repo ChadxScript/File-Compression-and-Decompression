@@ -46,7 +46,7 @@ int main(){
     treeNode *p;
     FILE *fp;
     char filename[45];
-    int freq[MAX]={0}, ind[MAX]={0}, c[MAX], x=0;
+    int freq[MAX]={0}, c[MAX], x=0;
     int temp, ch;
     printf("Input filename: ");
     scanf(" %[^\n]s",filename);
@@ -62,9 +62,34 @@ int main(){
     }
     for(int i=0;i<MAX;i++){
         if(freq[i]!=0){
-            ind[x] = i; x++;
-            printf("%d : \t '%c' \t : %d\n",i,i,freq[i]);
-            printf("\n%d.) indx = %d, i=%d\n",x-1,ind[x],i);
+            c[x] = i; x++; //store the value of chars
+            printf("%d : \t '%c' \t : %d\n",i,c[x-1],freq[i]);
+        }
+    }
+    //sort
+    x=0;
+    for(int i=0;i<MAX;i++){
+        for(int j=1;j<MAX;j++){
+            if(freq[i]!=0 && freq[j]!=0){
+                if(freq[i]<freq[j]){
+                    temp = freq[j];
+                    freq[j] = freq[i];
+                    freq[i] = temp;
+
+                    temp = c[x]; printf("\ntemp=%d c x+1=%d c x=%d\n",temp,c[x+1],c[x]);
+                    c[x] = c[x+1];
+                    c[x+1] = temp;
+                    x++;
+                }
+            }
+        }
+    }
+    x=0;
+    printf("\n\n");
+    for(int i=0;i<MAX;i++){
+        if(freq[i]!=0){
+            printf("%d : \t '%c' \t : %d\n",c[x],c[x],freq[i]);
+            x++;
         }
     }
     system("pause");
