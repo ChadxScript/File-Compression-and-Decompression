@@ -9,104 +9,87 @@ typedef struct tree{
     int freq;
     char c;
     struct tree *left, *right;
-}*tree;
+}tree;
 
-struct tree chars[256] = {{0}}; //initialize chars
-tree qqq[255], *que = qqq - 1;
-int nodesNum = 0, endQueue = 0;
-char *num[128] = {0}, buffer[1024];
+tree *heap[100];
+int heapsize=0;
 
-tree newNode(int fr, char ccc, tree l, tree r){
-    tree n = chars+nodesNum++;
-    if(fr){ //if no root
-        n->c = ccc;
-        n->freq = fr;
-    }else{ //merging two nodes to have a tree
-        n->left = l, n->right = r;
-        n->freq = l->freq + r->freq;
-    }
+int sortt(int fr[], int ind[], int cou[]){
+    int i=0,temp;
+    printf("\nFrequency:\n");
+    for(int x=0; x<MAX; x++){
+        if(fr[x]!=0){
+            ind[i]=x;
+            cou[i]=fr[x]; i++;
+            printf("%d : \t '%c' \t : %d\n",ind[i-1],ind[i-1],cou[i-1]);
+        }
+    }system("pause");system("cls");
+    //sort
+    for(int k=0;k<i;k++){
+        for(int j=0;j<i;j++){
+            if(cou[j]!=0){
+                if(cou[j]>cou[j+1]){
+                    temp = cou[j];
+                    cou[j] = cou[j+1];
+                    cou[j+1] = temp;
+
+                    temp = ind[j];
+                    ind[j] = ind[j+1];
+                    ind[j+1] = temp;
+                }
+            }
+        }
+    }printf("\nSorted:\n");
+    for(int x=0; x<=i; x++){
+        if(cou[x]!=0){
+            printf("%d : \t '%c' \t : %d\n",ind[x],ind[x],cou[x]);
+        }
+    }system("pause");system("cls"); return i;
 }
 
-void insertQueue(tree n){
-    int y, x = endQueue++;
-    while(y = x/2){
-        if(que[y]->freq <= n->freq){
+void iinsert(tree *n){
+    heapsize++;
+    heap[heapsize] = n;
+    int current = heapsize;
+    while(heap[current/2]->freq > n->freq){
+        heap[current] = heap[current/2];
+        current /= 2;
+    }heap[current] = n;
+}
+
+tree *removeMin(){
+    tree *minN, *lastN;
+    int child,current;
+    minN = heap[1];
+    lastN = heap[heapsize--];
+    for(current=1; current*2<=heapsize; current=child){
+        child = current*2;
+        if(child != heapsize && heap[child+1]->freq < heap[child]->freq){
+            child++;
+        }if(lastN->freq > heap[child]->freq){
+            heap[current]=heap[child];
+        }else{
             break;
         }
-        que[x] = que[y];
-        x = y;
     }
-    que[x] = n;
+    heap[current] = lastN;
+    return minN;
 }
 
-tree removeQueue(){
-    int x,y;
-    tree n = que[y = 1];
-    if(endQueue < 2){
-        return 0;
-    }endQueue--;
-
-    while((x = y*2)<endQueue){
-        if(x+1 < endQueue && que[x+1]->freq < que[x]->freq){
-            x++;
-        } que[y] = que[x]; y=x;
+void display(tree *temp,char *code){
+    if(temp->left==NULL && temp->right==NULL){
+        printf("%c \t : \t %s\n",temp->c,code); return;
     }
-    que[y] = que[endQueue];
-    return n;
-}
-
-void makeTree(tree n, char *str, int len){
-    static char *buf = buffer; //static is used to remain the value of buf
-    if(n->c){
-        str[len] = 0;
-        strcpy(buf ,str);
-        num[n->c] = buf;
-        buf += len + 1;
-        return;
-    }
-    str[len] = '0'; makeTree(n->left, str, len+1);
-    str[len] = '1'; makeTree(n->right, str, len+1);
-}
-
-void init(int fr[]){
-    char cc[16];
-
-    for(int x=0; x<256; x++){
-        if(fr[x]){
-            insertQueue(newNode(fr[x],x,0,0));
-        }
-    }
-
-    while(endQueue > 2){
-        insertQueue(newNode(0,0,removeQueue(),removeQueue()));
-    }
-
-    makeTree(que[1],cc,0);
-}
-
-
-void encode(){
-
-}
-
-void decode(const char *str, tree temp){
-    tree n = temp;
-    printf("Decoded: ");
-    while(*str){
-        if(*str++ == '0'){
-            n = n->left;
-        }else{
-            n = n->right;
-        }
-        if(n->c){
-            putchar(n->c);
-            n = temp;
-        }
-    }
-    putchar('\n');
-    if(temp != n){
-        printf("Error.\n");
-    }
+    int len = strlen(code);
+    char leftcode[10],rightcode[10];
+    strcpy(leftcode,code);
+    strcpy(rightcode,code);
+    leftcode[len] = '0';
+    leftcode[len+1] = '\0';
+    rightcode[len] = '1';
+    rightcode[len+1] = '\0';
+    display(temp->left,leftcode);
+    display(temp->right,rightcode);
 }
 
 int menu(){
@@ -122,14 +105,16 @@ int menu(){
 int main(){
     FILE *fp;
     char filename[45];
-    int freqq[256]={0},index[MAX],count[MAX],chh,i=0,temp;
+    int freqq[256]={0},index[MAX],count[MAX],chh;
     char bufferr[1024];
     switch(menu()){
-        case 1: printf("Input filename: ");
+        case 1: heap[0] = (tree *) malloc(sizeof(tree));
+                heap[0]->freq = 0;
+                printf("Input filename: ");
                 scanf(" %[^\n]s",filename);
                 fp=fopen(filename,"r");
                 if (fp==NULL){
-                    printf("File error.\n");system("pause");
+                    printf("File error.\n");system("pause");break;
                 }else{
                     while(!feof(fp)){
                         chh = fgetc(fp);
@@ -137,45 +122,41 @@ int main(){
                     }
                     fclose(fp);
                 }
+                printf("\nSorted: \n");
+                int a=sortt(freqq,index,count);
+                for(int x=0; x<=a;x++){
+                    printf("index: %c count: %d a: %d\n",(char)index[x],count[x],a);
+                }system("pause");
 
-                printf("\nFrequency:\n");
-                for(int x=0; x<MAX; x++){
-                    if(freqq[x]!=0){
-                        index[i]=x;
-                        count[i]=freqq[x]; i++;
-                        printf("%d : \t '%c' \t : %d\n",index[i-1],index[i-1],count[i-1]);
-                    }
-                }system("pause");system("cls");
-                //sort
-                for(int k=0;k<i;k++){
-                    for(int j=0;j<i;j++){
-                        if(count[j]!=0){
-                            if(count[j]>count[j+1]){
-                                temp = count[j];
-                                count[j] = count[j+1];
-                                count[j+1] = temp;
-
-                                temp = index[j];
-                                index[j] = index[j+1];
-                                index[j+1] = temp;
-                            }
-                        }
-                    }
+                for(int x=0;x<=a;x++){
+                    tree *temp = (tree*) malloc(sizeof(tree));
+                    temp->c = (char)index[x];
+                    temp->freq = count[x];
+                    temp->left = temp->right = NULL;
+                    iinsert(temp);
                 }
-                printf("\nSorted:\n");
-                for(int x=0; x<=i; x++){
-                    if(count[x]!=0){
-                        printf("%d : \t '%c' \t : %d\n",index[x],index[x],count[x]);
-                    }
-                }system("pause");system("cls");
-                init(index);
-                for(int x=0; x<256; x++){
-                    if(num[x]){
-                        printf("'%c' : %s\n",x,num[x]);
-                    }
-                }printf("Encoded: %s\n",bufferr);
+                if(a==1){
+                    printf("%c \t : \t 0\n",index[a]); return 0;
+                }
+                for(int x=0; x<a; x++){
+                    tree *left = removeMin();
+                    tree *right = removeMin();
+                    tree *temp = (tree*) malloc(sizeof(tree));
+                    temp->c = 0;
+                    temp->left = left;
+                    temp->right = right;
+                    temp->freq = left->freq + right->freq;
+                    iinsert(temp);
+                }
+
+                printf("\nEncoded: \n");
+                tree *huffman = removeMin();
+                char code[10];
+                code[0] = '\0';
+                display(huffman,code);
                 break;
-        case 2: decode(bufferr, que[1]);break;
+        case 2: //decode(bufferr, que[1]);
+            break;
         case 3: exit(0);
     }return 0;
 }
