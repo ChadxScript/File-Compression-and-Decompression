@@ -68,17 +68,12 @@ void makeTree(tree n, char *str, int len){
     str[len] = '1'; makeTree(n->right, str, len+1);
 }
 
-void init(const char *str){
-    int freq[256] = {0};
+void init(int fr[]){
     char cc[16];
 
-    while(*str){
-        freq[(int)*str++]++; //count frequency
-    }
-
     for(int x=0; x<256; x++){
-        if(freq[x]){
-            insertQueue(newNode(freq[x],x,0,0));
+        if(fr[x]){
+            insertQueue(newNode(fr[x],x,0,0));
         }
     }
 
@@ -119,6 +114,7 @@ int main(){
     FILE *fp;
     char filename[45];
     const char *ch;
+    int freqq[256]={0},chh;
     printf("Input filename: ");
     scanf(" %[^\n]s",filename);
     fp=fopen(filename,"r");
@@ -126,13 +122,14 @@ int main(){
         printf("File error.\n");system("pause");
     }else{
         while(!feof(fp)){
-            fscanf(fp," %s",&ch);
+            chh = fgetc(fp);
+            freqq[chh]++;
         }
         fclose(fp);
     }
     char bufferr[1024];
 
-    init(&ch);
+    init(freqq);
     for(int x=0; x<256; x++){
         if(num[x]){
             printf("'%c' : %s\n",x,num[x]);
