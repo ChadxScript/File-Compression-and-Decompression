@@ -29,7 +29,7 @@ tree newNode(int fr, char ccc, tree l, tree r){
 
 void insertQueue(tree n){
     int y, x = endQueue++;
-    while(y = x/2){ //sort
+    while(y = x/2){
         if(que[y]->freq <= n->freq){
             break;
         }
@@ -84,15 +84,14 @@ void init(int fr[]){
     makeTree(que[1],cc,0);
 }
 
-void encode(const char *str, char*buf){ //will copy the 0s and 1s
-    while(*str){
-        strcpy(buf, num[*str]);
-        buf += strlen(num[*str++]);
-    }
+
+void encode(){
+
 }
 
 void decode(const char *str, tree temp){
     tree n = temp;
+    printf("Decoded: ");
     while(*str){
         if(*str++ == '0'){
             n = n->left;
@@ -110,35 +109,73 @@ void decode(const char *str, tree temp){
     }
 }
 
+int menu(){
+    int choice;
+    printf("\nMenu\n");
+    printf("[1] Encode\n");
+    printf("[2] Decode\n");
+    printf("[3] Exit\n");
+    printf("\nEnter Number: "); scanf("%d",&choice);
+    return choice;
+}
+
 int main(){
     FILE *fp;
     char filename[45];
-    const char *ch;
-    int freqq[256]={0},chh;
-    printf("Input filename: ");
-    scanf(" %[^\n]s",filename);
-    fp=fopen(filename,"r");
-    if (fp==NULL){
-        printf("File error.\n");system("pause");
-    }else{
-        while(!feof(fp)){
-            chh = fgetc(fp);
-            freqq[chh]++;
-        }
-        fclose(fp);
-    }
+    int freqq[256]={0},index[MAX],count[MAX],chh,i=0,temp;
     char bufferr[1024];
+    switch(menu()){
+        case 1: printf("Input filename: ");
+                scanf(" %[^\n]s",filename);
+                fp=fopen(filename,"r");
+                if (fp==NULL){
+                    printf("File error.\n");system("pause");
+                }else{
+                    while(!feof(fp)){
+                        chh = fgetc(fp);
+                        freqq[chh]++;
+                    }
+                    fclose(fp);
+                }
 
-    init(freqq);
-    for(int x=0; x<256; x++){
-        if(num[x]){
-            printf("'%c' : %s\n",x,num[x]);
-        }
-    }
-    encode(ch, bufferr);
-    printf("Encoded: %s\n",bufferr);
+                printf("\nFrequency:\n");
+                for(int x=0; x<MAX; x++){
+                    if(freqq[x]!=0){
+                        index[i]=x;
+                        count[i]=freqq[x]; i++;
+                        printf("%d : \t '%c' \t : %d\n",index[i-1],index[i-1],count[i-1]);
+                    }
+                }system("pause");system("cls");
+                //sort
+                for(int k=0;k<i;k++){
+                    for(int j=0;j<i;j++){
+                        if(count[j]!=0){
+                            if(count[j]>count[j+1]){
+                                temp = count[j];
+                                count[j] = count[j+1];
+                                count[j+1] = temp;
 
-    printf("Decoded: ");
-    decode(bufferr, que[1]);
-    return 0;
+                                temp = index[j];
+                                index[j] = index[j+1];
+                                index[j+1] = temp;
+                            }
+                        }
+                    }
+                }
+                printf("\nSorted:\n");
+                for(int x=0; x<=i; x++){
+                    if(count[x]!=0){
+                        printf("%d : \t '%c' \t : %d\n",index[x],index[x],count[x]);
+                    }
+                }system("pause");system("cls");
+                init(index);
+                for(int x=0; x<256; x++){
+                    if(num[x]){
+                        printf("'%c' : %s\n",x,num[x]);
+                    }
+                }printf("Encoded: %s\n",bufferr);
+                break;
+        case 2: decode(bufferr, que[1]);break;
+        case 3: exit(0);
+    }return 0;
 }
