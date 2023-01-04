@@ -6,91 +6,214 @@ By Andrew R Oloroso and Armand Angelo C Barrios*/
 #define MAX 256
 
 typedef struct tree{
+    char ch;
     int freq;
-    char c;
     struct tree *left, *right;
 }tree;
 
-tree *heap[100];
-int heapsize=0;
+typedef struct que{
+    tree *qtree;
+    struct que *next;
+}pque; pque *H;
 
-int sortt(int fr[], int ind[], int cou[]){
-    int i=0,temp;
-    printf("\nFrequency:\n");
+//Global Var
+int chfreq[MAX], code[MAX];
+int count,isNull,ascCount,ascRem,loc=0,size=0,chnum=-1,shift=7,space=8;
+char chCode[MAX], memory='\0';
+
+void makeNull(){
+    H = NULL;
+}
+void initArray(){
     for(int x=0; x<MAX; x++){
-        if(fr[x]!=0){
-            ind[i]=x;
-            cou[i]=fr[x]; i++;
-            printf("%d : \t '%c' \t : %d\n",ind[i-1],ind[i-1],cou[i-1]);
-        }
-    }system("pause");system("cls");
-    //sort
-    for(int k=0;k<i;k++){
-        for(int j=0;j<i;j++){
-            if(cou[j]!=0){
-                if(cou[j]>cou[j+1]){
-                    temp = cou[j];
-                    cou[j] = cou[j+1];
-                    cou[j+1] = temp;
-
-                    temp = ind[j];
-                    ind[j] = ind[j+1];
-                    ind[j+1] = temp;
+        chfreq[x]=0;
+    }
+}
+pque *makeNode(int i, int j, tree *leftt, tree *rightt){
+    pque *newNode = (pque*) malloc(sizeof(pque));
+    newNode->qtree = (tree*) malloc(sizeof(tree));
+    newNode->qtree->left = leftt;
+    newNode->qtree->right = rightt;
+    newNode->next = NULL;
+    if(j!=0){
+        newNode->qtree->ch = i;
+        newNode->qtree->freq = chfreq[i];
+    }else{
+        newNode->qtree->ch = '\0';
+        newNode->qtree->freq = i;
+    }return newNode;
+}
+void deque(pque *currNode){
+    if(currNode->next !=NULL){
+        free(currNode->next);
+    }free(currNode);
+}
+void enqueue(pque *newNode){ //(sort)
+    pque *p, *q;
+    p=q=H;
+    if(H==NULL){ //first element
+        newNode->next=H;
+        H = newNode;
+    }else{
+        if(newNode->qtree->freq < H->qtree->freq){ //will put the next element to the next node if it has lower freq that newNode
+            newNode->next=H;
+            H = newNode;
+        }else{
+            while(p!=NULL){
+                q=p; p=p->next;
+                if(p!=NULL){
+                    if(newNode->qtree->freq < p->qtree->freq){ //will insert the node if the freq is less than the next node
+                        newNode->next = p;
+                        q->next = newNode; break;
+                    }
+                }else{
+                    q->next = newNode; //will insert the newnode if it has greater freq that the previous nodes
+                    newNode->next = p;
                 }
             }
         }
-    }printf("\nSorted:\n");
-    for(int x=0; x<=i; x++){
-        if(cou[x]!=0){
-            printf("%d : \t '%c' \t : %d\n",ind[x],ind[x],cou[x]);
-        }
-    }system("pause");system("cls"); return i;
+    }
 }
-
-void iinsert(tree *n){
-    heapsize++;
-    heap[heapsize] = n;
-    int current = heapsize;
-    while(heap[current/2]->freq > n->freq){
-        heap[current] = heap[current/2];
-        current /= 2;
-    }heap[current] = n;
+void makeTree(pque *leftt, pque *rightt){
+    pque *newNode, *temp = H;
+    newNode = makeNode((leftt->qtree->freq)+(rightt->qtree->freq),0,leftt->qtree,rightt->qtree); //will add the freq of the 2 lowest freq and make a new node
+    if(rightt->next!=NULL){
+        H = rightt->next;
+    }else{
+        H = newNode;
+    }
+    deque(temp);
+    enqueue(newNode);
+    if(H->next!=NULL){
+        makeTree(H, H->next);
+    }
 }
-
-tree *removeMin(){
-    tree *minN, *lastN;
-    int child,current;
-    minN = heap[1];
-    lastN = heap[heapsize--];
-    for(current=1; current*2<=heapsize; current=child){
-        child = current*2;
-        if(child != heapsize && heap[child+1]->freq < heap[child]->freq){
-            child++;
-        }if(lastN->freq > heap[child]->freq){
-            heap[current]=heap[child];
-        }else{
-            break;
+void trav(tree *newBranch){
+    if(newBranch->left==NULL && newBranch->right==NULL){
+        printf("\n%d\t: '%c'\t: %d\t: ",newBranch->ch,newBranch->ch,newBranch->freq);
+        for(int x=0; x<=chnum; x++){
+            printf("%d",code[x]);
+        }return;
+    }
+    chnum++;
+    code[chnum] = 0;
+    trav(newBranch->left);
+    code[chnum] = 1;
+    trav(newBranch->right);
+    chnum--;
+}
+void findd(tree *n, char c){
+    if(n->left==NULL && n->right==NULL){
+        if(n->ch==c){
+            isNull=0;
+        }return;
+    }
+    chnum++;
+    chCode[chnum] = 0;
+    findd(n->left,c);
+    if(isNull!=0){
+        chCode[chnum] = 1;
+        findd(n->right,c);
+    }if(isNull!=0){
+        chnum--;
+    }
+}
+void createBinary(FILE *f2p, tree *treeNode){
+    FILE *compressedFile;
+    compressedFile=fopen("compress.txt","wb");
+    while(!feof(f2p)){
+        chnum = -1;
+        isNull = 1;
+        count = fgetc(f2p);
+        findd(treeNode,count);
+        for(int x=0; x<=chnum; x++){
+            loc++;
+            memory = memory | chCode[x]; //will store the value of 1 if any of the two var is 1
+            if(loc<8){
+                loc = memory << 1;
+            }if(loc==8){
+                fputc(memory,compressedFile);
+                loc=0;
+                memory='\0';
+            }
         }
     }
-    heap[current] = lastN;
-    return minN;
+    while(loc!=7){
+        memory = loc << 1;
+        loc++;
+    }
+    fputc(memory,compressedFile);
+    ftell(compressedFile);
+    fclose(compressedFile);
+}
+void saveBinary(tree *n){
+    FILE *tr;
+    tr = fopen("tree.txt","wb");
+    char temp;
+    if(n->left==NULL && n->right==NULL){
+        temp = 1;
+        temp <<= shift;
+        memory |= temp;
+        space--;
+        ascCount = 8-shift;
+        ascRem = ascCount;
+        if(space>0){
+            temp = n->ch;
+            temp >>= ascCount;
+            memory |= temp;
+        }
+        fputc(memory,tr);
+        memory='\0';
+        shift=7;
+        space=8;
+        if(ascRem>0){
+            temp = n->ch;
+            temp >>= ascRem;
+            memory |= temp;
+            space = 8-ascRem;
+            shift = space-1;
+            if(ascRem==8){
+                fputc(memory,tr);
+                memory='\0';
+                shift=7;
+                space=8;
+            }
+        }
+        ascCount=8;
+        ascRem=8;
+        return;
+    }
+    if(n->left->ch == '\0'){
+        temp=0;
+        temp <<= shift;
+        memory |= temp;
+        shift--;
+        space--;
+        if(space==0){
+            fputc(memory,tr);
+            memory='\0';
+            shift=7;
+            space=8;
+        }
+    }saveBinary(n->left);
+    if(n->right->ch == '\0'){
+        temp=0;
+        temp <<= shift;
+        memory |= temp;
+        shift--;
+        space--;
+        if(space==0){
+            fputc(memory,tr);
+            memory='\0';
+            shift=7;
+            space=8;
+        }
+    }saveBinary(n->right);
+    fputc(memory,tr);
+    fclose(tr);
 }
 
-void display(tree *temp,char *code){
-    if(temp->left==NULL && temp->right==NULL){
-        printf("%c \t : \t %s\n",temp->c,code); return;
-    }
-    int len = strlen(code);
-    char leftcode[10],rightcode[10];
-    strcpy(leftcode,code);
-    strcpy(rightcode,code);
-    leftcode[len] = '0';
-    leftcode[len+1] = '\0';
-    rightcode[len] = '1';
-    rightcode[len+1] = '\0';
-    display(temp->left,leftcode);
-    display(temp->right,rightcode);
-}
+
 
 int menu(){
     int choice;
@@ -103,60 +226,49 @@ int menu(){
 }
 
 int main(){
-    FILE *fp;
+    pque *newNode;
+    tree *huffTree;
+    FILE *fp,*fpq;
     char filename[45];
-    int freqq[256]={0},index[MAX],count[MAX],chh;
-    char bufferr[1024];
+    makeNull();
+    initArray();
     switch(menu()){
-        case 1: heap[0] = (tree *) malloc(sizeof(tree));
-                heap[0]->freq = 0;
-                printf("Input filename: ");
+        case 1: printf("Input .txt filename: ");
                 scanf(" %[^\n]s",filename);
                 fp=fopen(filename,"r");
                 if (fp==NULL){
-                    printf("File error.\n");system("pause");break;
+                    printf("File error.\n");exit(0);
                 }else{
                     while(!feof(fp)){
-                        chh = fgetc(fp);
-                        freqq[chh]++;
+                        count = fgetc(fp);
+                        chfreq[count]++;
+                        putchar(count);
+                        size++;
                     }
                     fclose(fp);
                 }
-                printf("\nSorted: \n");
-                int a=sortt(freqq,index,count);
-                for(int x=0; x<=a;x++){
-                    printf("index: %c count: %d a: %d\n",(char)index[x],count[x],a);
-                }system("pause");
+                for(int x=0; x<MAX; x++){
+                    if(chfreq[x]>0){
+                        newNode = makeNode(x,1,NULL,NULL);
+                        enqueue(newNode);
+                    }
+                }
+                makeTree(H, H->next);
+                huffTree = H->qtree;
+                free(H);
+                printf("\n\nAscii\tChar\tFreq\tCode");
+                trav(huffTree);
 
-                for(int x=0;x<=a;x++){
-                    tree *temp = (tree*) malloc(sizeof(tree));
-                    temp->c = (char)index[x];
-                    temp->freq = count[x];
-                    temp->left = temp->right = NULL;
-                    iinsert(temp);
-                }
-                if(a==1){
-                    printf("%c \t : \t 0\n",index[a]); return 0;
-                }
-                for(int x=0; x<a; x++){
-                    tree *left = removeMin();
-                    tree *right = removeMin();
-                    tree *temp = (tree*) malloc(sizeof(tree));
-                    temp->c = 0;
-                    temp->left = left;
-                    temp->right = right;
-                    temp->freq = left->freq + right->freq;
-                    iinsert(temp);
-                }
-
-                printf("\nEncoded: \n");
-                tree *huffman = removeMin();
-                char code[10];
-                code[0] = '\0';
-                display(huffman,code);
+                //create binary and save to file
+                fp = fopen(filename,"r");
+                createBinary(fp,huffTree);
+                fclose(fp);
+                saveBinary(huffTree);
+                fpq = fopen("frequency.txt","w");
+                fprintf(fp,"%d",huffTree->freq);
+                fclose(fpq);
                 break;
-        case 2: //decode(bufferr, que[1]);
-            break;
+        case 2: //decode(bufferr, que[1]);break;
         case 3: exit(0);
     }return 0;
 }
