@@ -13,13 +13,19 @@ typedef struct tree{
 
 typedef struct que{
     tree *qtree;
+    char dch;
+    int treeleaf;
+    struct que *dleft, *dright;
     struct que *next;
 }pque; pque *H;
 
 //Global Var
 int chfreq[MAX], code[MAX];
 int count,isNull,ascCount,ascRem,loc=0,size=0,chnum=-1,shift=7,space=8;
-char chCode[MAX], memory='\0';
+char chCode[MAX], memory='\0',ascmemory='\0',tempMemory='\0';
+
+int dshift=0,fr,sc=0,rb;
+char temp;
 
 void makeNull(){
     H = NULL;
@@ -132,7 +138,8 @@ void createBinary(FILE *f2p, tree *treeNode){
             if(loc<8){
                 memory = memory << 1;
             }if(loc==8){
-                fprintf(compressedFile,"%d",memory);
+                //fprintf(compressedFile,"%d",memory);
+                fputc(memory, compressedFile);
                 loc=0;
                 memory='\0';
             }
@@ -142,7 +149,8 @@ void createBinary(FILE *f2p, tree *treeNode){
         memory = memory << 1;
         loc++;
     }
-    fprintf(compressedFile,"%d",memory);
+    //fprintf(compressedFile,"%d",memory);
+    fputc(memory, compressedFile);
     ftell(compressedFile);
     fclose(compressedFile);
 }
@@ -208,6 +216,46 @@ void saveBinary(FILE *tr,tree *n){
         }
     }saveBinary(tr,n->right);
 }
+//decompress
+void makeDTree(pque *n, FILE *ptr){
+    pque *newNode;
+    if(temp==1){
+        if(dshift<8){
+            ascmemory |= memory << dshift;
+            ascRem = dshift;
+        }else{
+            rb = fgetc(ptr);
+            ascmemory = rb;
+            ascRem = 0;
+        }if(ascRem>0){
+            rb = fgetc(ptr);
+            memory = rb;
+            temp = memory;
+            temp >>= 8-dshift;
+            ascmemory |= temp;
+        }
+        n->dch = ascmemory;
+        n->treeleaf = 1;
+        ascmemory = '\0';
+        return;
+    }if(dshift<8){
+        temp = memory;
+    }else{
+        rb = fgetc(ptr);
+        memory = rb;
+        temp = memory;
+        dshift = 0;
+    }
+    temp <<= dshift;
+    temp >>= 7;
+    dshift++;
+
+    newNode = (pque*) malloc(sizeof(pque));
+    newNode->dch = '\0';
+    newNode->treeleaf = 0;
+    n->dleft=newNode;
+    makeDTree(n->dright,ptr);
+}
 
 
 
@@ -222,52 +270,109 @@ int menu(){
 }
 int main(){
     pque *newNode;
+    pque *dtree = (pque*) malloc(sizeof(pque));
+    pque *dnode;
     tree *huffTree;
-    FILE *fp,*fpq;
+    FILE *fp,*fpq,*fpc,*fpp;
     char filename[45];
     makeNull();
     initArray();
-    switch(menu()){
-        case 1: printf("Input .txt filename: ");
-                scanf(" %[^\n]s",filename);
-                fp=fopen(filename,"r");
-                if (fp==NULL){
-                    printf("File error.\n");exit(0);
-                }else{
-                    while(!feof(fp)){
-                        count = fgetc(fp);
-                        chfreq[count]++;
-                        putchar(count);
-                        size++;
+    while(1){
+        switch(menu()){
+            case 1: printf("Input .txt filename: ");
+                    scanf(" %[^\n]s",filename);
+                    fp=fopen(filename,"r");
+                    if (fp==NULL){
+                        printf("File error.\n");exit(0);
+                    }else{
+                        while(!feof(fp)){
+                            count = fgetc(fp);
+                            chfreq[count]++;
+                            putchar(count);
+                            size++;
+                        }
+                        fclose(fp);
                     }
-                    fclose(fp);
-                }
-                for(int x=0; x<MAX; x++){
-                    if(chfreq[x]>0){
-                        newNode = makeNode(x,1,NULL,NULL);
-                        enqueue(newNode);
+                    for(int x=0; x<MAX; x++){
+                        if(chfreq[x]>0){
+                            newNode = makeNode(x,1,NULL,NULL);
+                            enqueue(newNode);
+                        }
                     }
-                }
-                makeTree(H, H->next);
-                huffTree = H->qtree;
-                free(H);
-                printf("\n\nAscii\tChar\tFreq\tCode");
-                trav(huffTree);
+                    makeTree(H, H->next);
+                    huffTree = H->qtree;
+                    free(H);
+                    printf("\n\nAscii\tChar\tFreq\tCode");
+                    trav(huffTree);
 
-                //create binary and save to file
-                fp = fopen(filename,"r");
-                createBinary(fp,huffTree);
-                fclose(fp);
-                fp = fopen("tree.txt","wb");
-                memory='\0';
-                saveBinary(fp,huffTree);
-                fputc(memory,fp);
-                fclose(fp);
-                fpq = fopen("frequency.txt","w");
-                fprintf(fp,"%d",huffTree->freq);
-                fclose(fpq);
-                break;
-        case 2: //decode(bufferr, que[1]);break;
-        case 3: exit(0);
-    }return 0;
+                    //create binary and save to file
+                    fp = fopen(filename,"r");
+                    createBinary(fp,huffTree);
+                    fclose(fp);
+                    fp = fopen("tree.txt","wb");
+                    memory='\0';
+                    saveBinary(fp,huffTree);
+                    fputc(memory,fp);
+                    fclose(fp);
+                    fpq = fopen("frequency.txt","w");
+                    fprintf(fp,"%d",huffTree->freq);
+                    fclose(fpq);
+                    break;
+            case 2: printf("Make sure you have 'compress.txt','frequency.txt', and 'tree.txt' files.\n");system("pause");
+                    fp=fopen("tree.txt","rb");
+                    if (fp==NULL){
+                        printf("tree.txt not found.\n");exit(0);
+                    }else{
+                        fpq = fopen("frequency.txt","r");
+                    if(fpq==NULL){
+                            printf("frequency.txt not found.\n");exit(0);
+                        }else{
+                            fscanf(fpq,"%d",&fr);
+                        }fclose(fpq);
+                        rb=fgetc(fp);
+                        memory = rb;
+                        makeDTree(dtree,fp);
+                    }fclose(fp);
+                    fpc=fopen("compress.txt","rb");
+                    fpp=fopen("decompress.txt","w");
+                    if(fpc==NULL){
+                        printf("compress.txt not found.\n");exit(0);
+                    }else{
+                        printf("\nDecoded text: \n\n");
+                        dnode = dtree;
+                        while(!feof(fpc)){
+                            rb = fgetc(fpc);
+                            memory = rb;
+                            dshift = 0;
+                            while(dshift<0){
+                                temp = memory;
+                                temp<<=dshift;
+                                temp>>=7;
+                                if(temp==0){
+                                    dnode = dnode->dleft;
+                                }else if(temp==1){
+                                    dnode = dnode->dright;
+                                }if(dnode->treeleaf==1){
+                                    putchar(dnode->dch);
+                                    fputc(dnode->dch,fpp);
+                                    dnode = dtree;
+                                    sc++;
+                                }if(sc==fr){ //stop if all chars in the file are decompressed
+                                    break;
+                                }
+                            }
+                            if(sc==fr){
+                                break;
+                            }
+                        }
+                    }
+                    fclose(fpc);
+                    fclose(fpp);
+                    printf("\n\nCheck 'decompressed.txt' file for the decompressed text.\n");system("pause");
+                    free(dtree);
+                    break;
+            case 3: exit(0);
+        }
+    }
+    return 0;
 }
