@@ -130,25 +130,23 @@ void createBinary(FILE *f2p, tree *treeNode){
             loc++;
             memory = memory | chCode[x]; //will store the value of 1 if any of the two var is 1
             if(loc<8){
-                loc = memory << 1;
+                memory = memory << 1;
             }if(loc==8){
-                fputc(memory,compressedFile);
+                fprintf(compressedFile,"%d",memory);
                 loc=0;
                 memory='\0';
             }
         }
     }
     while(loc!=7){
-        memory = loc << 1;
+        memory = memory << 1;
         loc++;
     }
-    fputc(memory,compressedFile);
+    fprintf(compressedFile,"%d",memory);
     ftell(compressedFile);
     fclose(compressedFile);
 }
-void saveBinary(tree *n){
-    FILE *tr;
-    tr = fopen("tree.txt","wb");
+void saveBinary(FILE *tr,tree *n){
     char temp;
     if(n->left==NULL && n->right==NULL){
         temp = 1;
@@ -195,7 +193,7 @@ void saveBinary(tree *n){
             shift=7;
             space=8;
         }
-    }saveBinary(n->left);
+    }saveBinary(tr,n->left);
     if(n->right->ch == '\0'){
         temp=0;
         temp <<= shift;
@@ -208,9 +206,7 @@ void saveBinary(tree *n){
             shift=7;
             space=8;
         }
-    }saveBinary(n->right);
-    fputc(memory,tr);
-    fclose(tr);
+    }saveBinary(tr,n->right);
 }
 
 
@@ -224,7 +220,6 @@ int menu(){
     printf("\nEnter Number: "); scanf("%d",&choice);
     return choice;
 }
-
 int main(){
     pque *newNode;
     tree *huffTree;
@@ -263,7 +258,11 @@ int main(){
                 fp = fopen(filename,"r");
                 createBinary(fp,huffTree);
                 fclose(fp);
-                saveBinary(huffTree);
+                fp = fopen("tree.txt","wb");
+                memory='\0';
+                saveBinary(fp,huffTree);
+                fputc(memory,fp);
+                fclose(fp);
                 fpq = fopen("frequency.txt","w");
                 fprintf(fp,"%d",huffTree->freq);
                 fclose(fpq);
