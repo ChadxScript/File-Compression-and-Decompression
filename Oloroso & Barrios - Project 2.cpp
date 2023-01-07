@@ -8,12 +8,12 @@
 using namespace std;
 
 struct MinHeapNode{
-    int ch;
+    int chd;
     int freq;
     MinHeapNode *left, *right;
-    MinHeapNode(int ch, int freq){
+    MinHeapNode(int chd, int freq){
         left = right = NULL;
-        this->ch = ch;
+        this->chd = chd;
         this->freq = freq;
     }
 };
@@ -76,14 +76,14 @@ private:
     typedef node* nodeptr;
 public:
     decompress();
-    void decodeTree(fstream & f2p);
-    void insert(char ch, string dcodee);
+    void decodeTree(ifstream & f2p);
+    void insert(char chin, string dcodee);
     char decodeChar(bitread& in);
     private:
-    nodeptr root;
+    nodeptr rootd;
 };
 inline decompress::decompress(){
-    root = new node('*');
+    rootd = new node('*');
 }
 
 
@@ -117,7 +117,7 @@ void compress::calFreq(char fname[]){
 }
 void compress::makeArrFreq(){
     int x=0, y=0;
-    for(int i=0; i<256; i++){ //to filter only the occuring chars
+    for(int i=0; i<254; i++){ //to filter only the occuring chars
         if(freq[i]!=0){
             tfreq[x] = freq[i];
             ascVal[y] = i;
@@ -151,12 +151,14 @@ void compress::printFrequencyTable(){
 void compress::printBinary(struct MinHeapNode* root, string chr){
     if(!root){
         return;
-    }if(root->ch != chh){
+    }if(root->chd != chh){
         char ch;
-        ch = char(root->ch);
+        ch = char(root->chd);
         cout<<"\t   "<<ch<<"\t\t\t"<<chr<<"\n";
-        if(root->ch == ' '){
+        if(root->chd == ' '){
             code = code + "_" + " " + chr + "$";
+        }else if(root->chd == '\n'){
+            code = code + "newline" + " " + chr + "$"; //palitan yung newline na char
         }else{
             code = code + ch + " " + chr + "$";
         }
@@ -229,48 +231,50 @@ void bitwrite::writeBit(int x){
         buf = buf | mask;
     }if(x == 0){
         mask = mask << (7-bit);
-        mask -= mask;
+        mask = ~mask;
         buf = buf & mask;
     }bit++;
 }
-void decompress::insert(char ch, string dcodee){
-    decompress::nodeptr p = root;
+void decompress::insert(char chin, string dcodee){
+    decompress::nodeptr p = rootd;
     for(int x=0; x<dcodee.length(); x++){
         switch(dcodee[x]){
-            case '0': if(p->left == 0){ //create a tree
+            case '0': if(p->left == 0) //create a tree
                         p->left = new decompress::node('*');
-                        } p = p->left;
+                        p = p->left;
                         break;
-            case '1': if(p->right == 0){
+            case '1': if(p->right == 0)
                         p->right = new decompress::node('*');
-                        }p = p->right;
+                        p = p->right;
                         break;
             default: cout<< "Error in Code."<<endl; exit(0);
         }
-    } p->data = ch;
+    } p->data = chin;
 }
-void decompress::decodeTree(fstream & f2p){
+void decompress::decodeTree(ifstream & f2p){
     char ch;
     string dcode;
     for(;;){
         if(f2p.eof())return;
         f2p >>ch>>dcode;
         cout<<"\n"<<ch<<" = "<<dcode;
-        if(ch=='_'){
+        if(ch=="_"){
             ch = ' ';
+        }if(ch=="newline"){ //palitan yung newline na char kase string sya e
+            ch = '\n';
         }insert(ch,dcode);
     }
 }
 bitread::bitread(istream& is): in(is){ //initialize the value of buf and nbit
     buf = 0;
-    nbit = 0;
+    nbit = 8;
 }
 void bitread::fill(){
     buf = in.get();
     nbit = 0;
 }
 int bitread::readbit(){
-    if(nbit==0){
+    if(nbit==8){
         fill();
     }
     unsigned char mask =1; //take the bit's value
@@ -285,7 +289,7 @@ int bitread::readbit(){
 }
 char decompress::decodeChar(bitread& in){
     decompress::nodeptr p;
-    p = root;
+    p = rootd;
     int bitt;
     while(true){
         bitt = in.readbit();
@@ -346,14 +350,14 @@ int main(){
 	               cout<<"\n";
 	               obj.save();
 	               int tempp;
-	               fstream fp;
-	               fp.open(filename,ios::out);
+	               ofstream fp;
+	               fp.open(filename,ios::binary);
 	               bitwrite s(fp);
 	               for(int x=0; x<Huffcode.size(); x++){ //compressed file
                         tempp = Huffcode[x];
                         s.writeBit(tempp);
 	               }
-	               cout<<"\nCompression success.\n";
+	               cout<<"\nCompression success.\n"; fp.close();
 	               system("pause");
 	               break;
             }
@@ -361,13 +365,12 @@ int main(){
             {
                    cout <<"\n\nInput code file(.txt): ";
                    cin >> filename;
-                   fstream fp;
-                   fp.open(filename);
-                   if(!fp){
+                   ifstream fps(filename);
+                   if(!fps.is_open()){
                          cout << "File Error"<<endl; system("pause"); exit(0);
                    }else{
                         decompress dobj;
-                        dobj.decodeTree(fp);
+                        dobj.decodeTree(fps);
                         cout << "\nInput the compressed file(.cmp): ";
                         cin >> filename;
                         ifstream in;
@@ -378,10 +381,10 @@ int main(){
                         if(!in.is_open()){
                                cout << "File Error"<<endl; system("pause"); exit(0);
                         }
-                        char ch = char(129);
+                        char chc = char(129);
                         while(true){
                             data = dobj.decodeChar(os);
-                            if(data == ch){
+                            if(data == chc){
                                 break;
                             }currBit++;
                             cout<<data;
