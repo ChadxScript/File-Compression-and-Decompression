@@ -1,4 +1,5 @@
-/**/
+/*Project 2 - File Compression and Decompression in CPP using the Huffman Algorithm
+By Andrew R Oloroso and Armand Angelo C Barrios*/
 #include<iostream>
 #include<iomanip>
 #include<fstream>
@@ -158,7 +159,7 @@ void compress::printBinary(struct MinHeapNode* root, string chr){
         if(root->chd == ' '){
             code = code + "_" + " " + chr + "$";
         }else if(root->chd == '\n'){
-            code = code + "newline" + " " + chr + "$"; //palitan yung newline na char
+            code = code + "|" + " " + chr + "$";
         }else{
             code = code + ch + " " + chr + "$";
         }
@@ -258,9 +259,9 @@ void decompress::decodeTree(ifstream & f2p){
         if(f2p.eof())return;
         f2p >>ch>>dcode;
         cout<<"\n"<<ch<<" = "<<dcode;
-        if(ch=="_"){
+        if(ch=='_'){
             ch = ' ';
-        }if(ch=="newline"){ //palitan yung newline na char kase string sya e
+        }if(ch=='|'){
             ch = '\n';
         }insert(ch,dcode);
     }
@@ -387,7 +388,7 @@ int main(){
                             if(data == chc){
                                 break;
                             }currBit++;
-                            cout<<data;
+                            fout<<data; //writing to the .txt file
                         }
                         cout<<"\nDecompression Successful !!!\n";
                         system("pause");
