@@ -25,8 +25,8 @@ struct compare{
 };
 
 vector<int> Huffcode;
-vector< pair<char,string> > charactermap; //for frequencies
-priority_queue< MinHeapNode*, vector<MinHeapNode*>, compare> minHeap; //to create tree
+vector< pair<char,string> > charactermap; //for frequencies and char
+priority_queue< MinHeapNode*, vector<MinHeapNode*>, compare> minHeap; //to sort char base on freq
 class compress{
 private:
     int freq[256],ascVal[256],tfreq[256];
@@ -91,12 +91,12 @@ inline decompress::decompress(){
 
 void compress::init(){
     for(int i=0;i<255;i++){
-        ascVal[i] = 0; //ASCII_values[i] = 0;
-        tfreq[i] = 0; //actual_frequency[i] = 0;
-        freq[i] = 0; //frequency[i] = 0;
+        ascVal[i] = 0;
+        tfreq[i] = 0;
+        freq[i] = 0;
     }
 }
-void compress::calFreq(char fname[]){
+void compress::calFreq(char fname[]){ //count the char frequency
     int x,y,z;
     char calCh1,calCh2;
     fstream fp;
@@ -105,7 +105,7 @@ void compress::calFreq(char fname[]){
         cout << "File Error"<<endl; system("pause"); exit(0);
     }else{
         while(fp.get(calCh1)){
-            charactermap.push_back(make_pair(calCh1,""));
+            charactermap.push_back(make_pair(calCh1,""));//appending chars to the vector
             freqCount++;
             y = int (calCh1);
             freq[y]++;
